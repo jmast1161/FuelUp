@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
+using UnityEngine.UI;
 
 public class Player : MonoBehaviour
 {
@@ -23,16 +25,11 @@ public class Player : MonoBehaviour
     private GameObject bulletPrefab;
 
     [SerializeField]
-    private AudioSource audioSource;
+    private AudioSource fireAudioSource;
 
-    [SerializeField]
-    private AudioClip fireClip;
+    public event Action<Player> PlayerHit;
 
-    [SerializeField]
-    private AudioClip hitClip;
-
-    //[SerializeField]
-    //private Collider2D collider;
+    public event Action<Player> ShieldPickup;
 
     // Start is called before the first frame update
     void Start()
@@ -50,7 +47,7 @@ public class Player : MonoBehaviour
 
         moveDirection = new Vector2(moveX, moveY).normalized;
 
-        if(Input.GetKeyDown(KeyCode.Space))
+        if(Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
         {
             Fire();
         }
@@ -70,25 +67,25 @@ public class Player : MonoBehaviour
     }
 
     private void OnCollisionEnter2D(Collision2D col) 
-    {   
-        if (col.gameObject.name == "Enemy")
-        {   
+    {
+        if (col.gameObject.tag == "Meteor")
+        {
             Destroy(gameObject);
-            // game over
+            PlayerHit?.Invoke(this);
+        }
+
+        if(col.gameObject.tag == "Shield")
+        {
+            ShieldPickup?.Invoke(this);
         }
     }
 
     private void Fire()
     {
         var collider = GetComponent<PolygonCollider2D>();
-        var center = collider.bounds.center.x;
         var height = collider.bounds.size.y;
-        Debug.Log("center: " + center.ToString());
-        Debug.Log("height: " + height.ToString());
-        Debug.Log("transform x: " + transform.position.x.ToString());
-        Debug.Log("transform.y: " + transform.position.y.ToString());
         var bullet = Instantiate(bulletPrefab, new Vector2(transform.position.x, transform.position.y + height), Quaternion.identity);
         bullet.GetComponent<Rigidbody2D>().AddForce(transform.up * fireForce, ForceMode2D.Impulse);
-        //audioSource.PlayOneShot(fireClip);
+        fireAudioSource.Play();
     }
 }
